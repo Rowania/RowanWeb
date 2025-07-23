@@ -1,0 +1,67 @@
+# Rowan Web 项目 .gitignore
+
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Rust
+/backend/target/
+/backend/Cargo.lock
+*.rs.bk
+
+# Node.js
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/dist/
+/frontend/build/
+*.tsbuildinfo
+.pnpm-debug.log*
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 构建产物
+/dist/
+/build/
+
+# 测试覆盖率
+coverage/
+*.lcov
+
+# Docker
+.dockerignore

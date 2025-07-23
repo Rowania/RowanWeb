@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # 数据库
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: rowan_web
+      POSTGRES_USER: rowan
+      POSTGRES_PASSWORD: rowan_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rowan_network
+
+  # 后端
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ROWAN_DATABASE_URL: postgresql://rowan:rowan_password@postgres:5432/rowan_web
+      ROWAN_SERVER_HOST: 0.0.0.0
+      ROWAN_SERVER_PORT: 8000
+      JWT_SECRET: your-production-jwt-secret
+      RUST_LOG: info
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - rowan_network
+
+  # 前端
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - rowan_network
+
+volumes:
+  postgres_data:
+
+networks:
+  rowan_network:
+    driver: bridge
