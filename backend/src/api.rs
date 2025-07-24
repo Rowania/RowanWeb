@@ -18,19 +18,17 @@ pub fn create_router() -> Router<AppState> {
 
 fn auth_routes() -> Router<AppState> {
     Router::new()
-        .route("/register", post(auth_handler::register))
-        .route("/login", post(auth_handler::login))
         .route("/me", get(auth_handler::get_current_user))
-        .route("/refresh", post(auth_handler::refresh_token))
+        // SSH 认证将在中间件层处理，不需要注册/登录路由
 }
 
 fn note_routes() -> Router<AppState> {
     Router::new()
         .route("/", get(note_handler::list_notes))
-        .route("/", post(note_handler::create_note))
+        .route("/", post(note_handler::create_note)) // 仅管理员可访问
         .route("/:id", get(note_handler::get_note))
-        .route("/:id", put(note_handler::update_note))
-        .route("/:id", delete(note_handler::delete_note))
+        .route("/:id", put(note_handler::update_note)) // 仅管理员可访问
+        .route("/:id", delete(note_handler::delete_note)) // 仅管理员可访问
         .route("/:id/like", post(note_handler::like_note))
         .route("/:id/unlike", delete(note_handler::unlike_note))
 }

@@ -12,7 +12,8 @@ impl MigrationTrait for Migration {
                     .table(Comments::Table)
                     .if_not_exists()
                     .col(pk_auto(Comments::Id))
-                    .col(integer(Comments::NoteMetadataId).not_null())
+                    .col(integer_null(Comments::NoteMetadataId)) // 改为可空，因为评论可能关联笔记或随笔
+                    .col(integer_null(Comments::EssayId))        // 新增：随笔ID
                     .col(integer(Comments::VisitorProfileId).not_null()) 
                     .col(text(Comments::Content).not_null())
                     .col(integer_null(Comments::ParentId))
@@ -27,6 +28,13 @@ impl MigrationTrait for Migration {
                             .name("fk-comments-note_metadata_id")
                             .from(Comments::Table, Comments::NoteMetadataId) 
                             .to(NotesMetadata::Table, NotesMetadata::Id)     
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-comments-essay_id")
+                            .from(Comments::Table, Comments::EssayId) 
+                            .to(Essays::Table, Essays::Id)     
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
@@ -60,6 +68,7 @@ enum Comments {
     Table,
     Id,
     NoteMetadataId,
+    EssayId,
     VisitorProfileId,
     Content,
     ParentId,
@@ -69,6 +78,12 @@ enum Comments {
 
 #[derive(DeriveIden)]
 enum NotesMetadata{
+    Table,
+    Id,
+}
+
+#[derive(DeriveIden)]
+enum Essays{
     Table,
     Id,
 }

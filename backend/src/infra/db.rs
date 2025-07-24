@@ -5,6 +5,8 @@
 use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
 use std::time::Duration;
 
+pub mod entities;
+
 /// 数据库连接配置
 #[derive(Debug, Clone)]
 //为create_db_pool准备的结构体

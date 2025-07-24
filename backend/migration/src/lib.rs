@@ -5,6 +5,7 @@ mod m20250724_002939_create_comments_table;
 mod m20250724_013111_create_visitor_profiles_table;
 mod m20250724_014021_create_friends_links_table;
 mod m20250724_015502_create_likes_table;
+mod m20250724_035017_create_essays_table;
 
 pub struct Migrator;
 
@@ -17,6 +18,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250724_013111_create_visitor_profiles_table::Migration),
             Box::new(m20250724_014021_create_friends_links_table::Migration),
             Box::new(m20250724_015502_create_likes_table::Migration),
+            Box::new(m20250724_035017_create_essays_table::Migration),
         ]
     }
 }
