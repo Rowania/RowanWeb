@@ -7,9 +7,7 @@ use axum::{
     },
     routing::get,
 };
-use sea_orm::{Database, DatabaseConnection};
-use std::time::Duration;
-use tower::ServiceBuilder;
+use sea_orm::DatabaseConnection;
 use tower_http::{
     cors::CorsLayer,
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
@@ -49,11 +47,6 @@ async fn main() -> AppResult<()> {
     // 创建数据库连接
     let db = create_connection(&config.database.url).await?;
 
-    // 运行数据库迁移
-    sea_orm_migration::Migrator::up(&db, None)
-        .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
-
     // 创建应用状态
     let app_state = AppState {
         db,
@@ -87,13 +80,9 @@ fn create_app(state: AppState) -> Router {
     Router::new()
         .route("/", get(|| async { "Rowan Web API v1.0" }))
         .nest("/api", create_router())
-        .layer(
-            ServiceBuilder::new()
-                .layer(cors)
-                .layer(trace)
-                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB
-                .timeout(Duration::from_secs(30)),
-        )
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB
+        .layer(trace)
+        .layer(cors)
         .with_state(state)
 }
 

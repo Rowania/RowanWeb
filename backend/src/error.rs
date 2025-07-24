@@ -23,7 +23,7 @@ pub enum AppError {
     Bcrypt(#[from] bcrypt::BcryptError),
 
     #[error("Argon2 error: {0}")]
-    Argon2(#[from] argon2::Error),
+    Argon2(String),
 
     #[error("Config error: {0}")]
     Config(#[from] config::ConfigError),
@@ -90,5 +90,11 @@ impl IntoResponse for AppError {
         }));
 
         (status, body).into_response()
+    }
+}
+
+impl From<argon2::Error> for AppError {
+    fn from(error: argon2::Error) -> Self {
+        AppError::Argon2(error.to_string())
     }
 }

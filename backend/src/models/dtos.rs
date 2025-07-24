@@ -1,104 +1,62 @@
 use chrono::{DateTime, Utc};
+use sea_orm::prelude::DateTimeWithTimeZone;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
-// ============= 用户相关 DTOs =============
+// ============= 笔记元数据相关 DTOs =============
 
 #[derive(Debug, Deserialize, Validate)]
-pub struct RegisterRequest {
-    #[validate(length(min = 3, max = 50))]
-    pub username: String,
-    #[validate(email)]
-    pub email: String,
-    #[validate(length(min = 6))]
-    pub password: String,
-}
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct LoginRequest {
-    #[validate(email)]
-    pub email: String,
-    #[validate(length(min = 1))]
-    pub password: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct UserResponse {
-    pub id: Uuid,
-    pub username: String,
-    pub email: String,
-    pub avatar_url: Option<String>,
-    pub bio: Option<String>,
-    pub created_at: DateTime<Utc>,
-}
-
-impl From<crate::models::user::Model> for UserResponse {
-    fn from(user: crate::models::user::Model) -> Self {
-        Self {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            avatar_url: user.avatar_url,
-            bio: user.bio,
-            created_at: user.created_at,
-        }
-    }
-}
-
-// ============= 笔记相关 DTOs =============
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct CreateNoteRequest {
-    #[validate(length(min = 1, max = 200))]
+pub struct CreateNoteMetadataRequest {
+    #[validate(length(min = 1, max = 255))]
+    pub slug: String,
+    #[validate(length(min = 1, max = 255))]
     pub title: String,
-    #[validate(length(min = 1))]
-    pub content: String,
     pub summary: Option<String>,
-    pub status: Option<String>,
-    pub tags: Option<serde_json::Value>,
+    pub tags: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
-pub struct UpdateNoteRequest {
-    #[validate(length(min = 1, max = 200))]
+pub struct UpdateNoteMetadataRequest {
+    #[validate(length(min = 1, max = 255))]
+    pub slug: Option<String>,
+    #[validate(length(min = 1, max = 255))]
     pub title: Option<String>,
-    #[validate(length(min = 1))]
-    pub content: Option<String>,
     pub summary: Option<String>,
-    pub status: Option<String>,
-    pub tags: Option<serde_json::Value>,
+    pub tags: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
-pub struct NoteResponse {
-    pub id: Uuid,
+pub struct NoteMetadataResponse {
+    pub id: i32,
+    pub file_id: Uuid,
+    pub slug: String,
     pub title: String,
-    pub content: String,
     pub summary: Option<String>,
-    pub author_id: Uuid,
-    pub status: String,
-    pub tags: Option<serde_json::Value>,
-    pub views_count: i32,
+    pub published_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+    pub views: i32,
     pub likes_count: i32,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub tags: Option<String>,
+    pub category: Option<String>,
 }
 
-impl From<crate::models::note::Model> for NoteResponse {
-    fn from(note: crate::models::note::Model) -> Self {
+impl From<crate::models::notes_metadata::Model> for NoteMetadataResponse {
+    fn from(note: crate::models::notes_metadata::Model) -> Self {
         Self {
             id: note.id,
+            file_id: note.file_id,
+            slug: note.slug,
             title: note.title,
-            content: note.content,
             summary: note.summary,
-            author_id: note.author_id,
-            status: note.status,
-            tags: note.tags,
-            views_count: note.views_count,
-            likes_count: note.likes_count,
-            created_at: note.created_at,
+            published_at: note.published_at,
             updated_at: note.updated_at,
+            views: note.views,
+            likes_count: note.likes_count,
+            tags: note.tags,
+            category: note.category,
         }
     }
 }
@@ -109,8 +67,9 @@ impl From<crate::models::note::Model> for NoteResponse {
 pub struct CreateCommentRequest {
     #[validate(length(min = 1))]
     pub content: String,
-    pub note_id: Uuid,
-    pub parent_id: Option<Uuid>,
+    pub note_metadata_id: i32,
+    pub visitor_profile_id: i32,
+    pub parent_id: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -121,43 +80,168 @@ pub struct UpdateCommentRequest {
 
 #[derive(Debug, Serialize)]
 pub struct CommentResponse {
-    pub id: Uuid,
+    pub id: i32,
+    pub note_metadata_id: i32,
+    pub visitor_profile_id: i32,
     pub content: String,
-    pub note_id: Uuid,
-    pub author_id: Uuid,
-    pub parent_id: Option<Uuid>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub parent_id: Option<i32>,
+    pub created_at: DateTimeWithTimeZone,
+    pub is_approved: bool,
 }
 
-impl From<crate::models::comment::Model> for CommentResponse {
-    fn from(comment: crate::models::comment::Model) -> Self {
+impl From<crate::models::comments::Model> for CommentResponse {
+    fn from(comment: crate::models::comments::Model) -> Self {
         Self {
             id: comment.id,
+            note_metadata_id: comment.note_metadata_id,
+            visitor_profile_id: comment.visitor_profile_id,
             content: comment.content,
-            note_id: comment.note_id,
-            author_id: comment.author_id,
             parent_id: comment.parent_id,
             created_at: comment.created_at,
-            updated_at: comment.updated_at,
+            is_approved: comment.is_approved,
+        }
+    }
+}
+
+// ============= 访客配置文件相关 DTOs =============
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateVisitorProfileRequest {
+    #[validate(length(min = 1, max = 40))]
+    pub cookie_id: String,
+    #[validate(length(min = 1, max = 13))]
+    pub name: String,
+    #[validate(length(max = 45))]
+    pub ip: String,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateVisitorProfileRequest {
+    #[validate(length(min = 1, max = 13))]
+    pub name: Option<String>,
+    #[validate(length(max = 45))]
+    pub ip: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VisitorProfileResponse {
+    pub id: i32,
+    pub cookie_id: String,
+    pub name: String,
+    pub ip: String,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+}
+
+impl From<crate::models::visitor_profiles::Model> for VisitorProfileResponse {
+    fn from(profile: crate::models::visitor_profiles::Model) -> Self {
+        Self {
+            id: profile.id,
+            cookie_id: profile.cookie_id,
+            name: profile.name,
+            ip: profile.ip,
+            created_at: profile.created_at,
+            updated_at: profile.updated_at,
+        }
+    }
+}
+
+// ============= 友链相关 DTOs =============
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateFriendsLinkRequest {
+    #[validate(length(min = 1, max = 50))]
+    pub name: String,
+    #[validate(url, length(min = 1, max = 255))]
+    pub url: String,
+    #[validate(length(max = 255))]
+    pub description: Option<String>,
+    #[validate(url, length(max = 255))]
+    pub logo_url: Option<String>,
+    pub sort_order: Option<i32>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateFriendsLinkRequest {
+    #[validate(length(min = 1, max = 50))]
+    pub name: Option<String>,
+    #[validate(url, length(min = 1, max = 255))]
+    pub url: Option<String>,
+    #[validate(length(max = 255))]
+    pub description: Option<String>,
+    #[validate(url, length(max = 255))]
+    pub logo_url: Option<String>,
+    pub sort_order: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct FriendsLinkResponse {
+    pub id: i32,
+    pub name: String,
+    pub url: String,
+    pub description: Option<String>,
+    pub logo_url: Option<String>,
+    pub sort_order: i32,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+}
+
+impl From<crate::models::friends_links::Model> for FriendsLinkResponse {
+    fn from(link: crate::models::friends_links::Model) -> Self {
+        Self {
+            id: link.id,
+            name: link.name,
+            url: link.url,
+            description: link.description,
+            logo_url: link.logo_url,
+            sort_order: link.sort_order,
+            created_at: link.created_at,
+            updated_at: link.updated_at,
+        }
+    }
+}
+
+// ============= 点赞相关 DTOs =============
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateLikeRequest {
+    pub note_metadata_id: i32,
+    #[validate(length(min = 1, max = 45))]
+    pub ip_address: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LikeResponse {
+    pub id: i32,
+    pub note_metadata_id: i32,
+    pub ip_address: String,
+}
+
+impl From<crate::models::likes::Model> for LikeResponse {
+    fn from(like: crate::models::likes::Model) -> Self {
+        Self {
+            id: like.id,
+            note_metadata_id: like.note_metadata_id,
+            ip_address: like.ip_address,
         }
     }
 }
 
 // ============= 通用 DTOs =============
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct PaginationQuery {
-    #[serde(default = "default_page")]
-    pub page: u64,
-    #[serde(default = "default_per_page")]
-    pub per_page: u64,
+    #[validate(range(min = 1, max = 100))]
+    pub page: Option<u64>,
+    #[validate(range(min = 1, max = 100))]
+    pub page_size: Option<u64>,
 }
 
-fn default_page() -> u64 {
-    1
-}
-
-fn default_per_page() -> u64 {
-    20
+impl Default for PaginationQuery {
+    fn default() -> Self {
+        Self {
+            page: Some(1),
+            page_size: Some(10),
+        }
+    }
 }
