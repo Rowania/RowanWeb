@@ -1,93 +1,67 @@
-use axum::{
-    Router,
-    extract::DefaultBodyLimit,
-    http::{
-        HeaderValue, Method,
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-    },
-    routing::get,
-};
-use sea_orm::DatabaseConnection;
-use tower_http::{
-    cors::CorsLayer,
-    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
-};
-use tracing::Level;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use axum::{Extension, Json, routing::get};
+use std::sync::Arc;
 
-mod api;
-mod config;
-mod error;
+//mod api;
 mod infra;
-mod models;
-mod service;
+mod schema;
 
-use crate::{
-    api::create_router, config::AppConfig, error::AppResult, infra::db::create_connection,
-};
+use infra::db::{AppState, create_db_pool};
 
 #[tokio::main]
-async fn main() -> AppResult<()> {
+async fn main() -> anyhow::Result<()> {
     // 初始化日志
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                "rowan_web_backend=debug,tower_http=debug,axum::rejection=trace".into()
-            }),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    env_logger::init();
 
-    dotenvy::dotenv().ok();
+    // 加载环境变量
+    dotenvy::dotenv().expect("无法加载 .env 文件，请确保 .env 文件存在且格式正确");
 
-    // 加载配置
-    let config = AppConfig::from_env()?;
-    tracing::info!("Starting Rowan Web Backend on {}", config.server.address());
+    // 获取数据库URL，必须在 .env 文件中配置
+    let database_url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL 环境变量未设置，请在 .env 文件中配置");
 
-    // 创建数据库连接
-    let db = create_connection(&config.database.url).await?;
+    // 创建数据库连接池
+    log::info!("🔗 正在连接数据库: {database_url}......");
+    let db = create_db_pool(&database_url).await?;
+    log::info!("✅ 数据库连接池创建成功！");
 
     // 创建应用状态
-    let app_state = AppState {
-        db,
-        config: config.clone(),
-    };
+    let app_state = AppState::new(db);
 
-    // 创建路由
-    let app = create_app(app_state);
+    //let annotated_router = api::create_api_router();
+    //let api_docs = Arc::new(annotated_router.annotations().clone());
+    //let app_router = annotated_router.build();
+    //let api_docs_for_handler = Arc::clone(&api_docs);
 
-    // 启动服务器
-    let listener = tokio::net::TcpListener::bind(&config.server.address()).await?;
-    tracing::info!("Listening on {}", config.server.address());
+    // let app = app_router
+    //     .route(
+    //         "/api/docs",
+    //         get(move || {
+    //             let docs = Arc::clone(&api_docs_for_handler);
+    //             async move { Json((*docs).clone()) }
+    //         }),
+    //     )
+    //     .layer(Extension(app_state)); // 添加应用状态作为扩展
 
-    axum::serve(listener, app).await?;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:5000")
+        .await
+        .expect("Failed to bind to address 127.0.0.1:5000. Is the port already in use?");
+
+    println!("🚀 服务器已启动!");
+    println!("📍 服务地址: http://127.0.0.1:5000");
+    println!("📝 API 端点:");
+    // for endpoint in api_docs.iter() {
+    //     println!(
+    //         "   {:?} {} - {}",
+    //         endpoint.method, endpoint.path, endpoint.description
+    //     );
+    // }
+    println!("📚 API 文档: http://127.0.0.1:5000/api/docs");
+    println!("💾 数据库: {database_url}");
+    println!();
+
+    // axum::serve(listener, app)
+    //     .await
+    //     .expect("Axum server failed to start or encountered a fatal error");
 
     Ok(())
-}
-
-fn create_app(state: AppState) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_credentials(true)
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
-
-    let trace = TraceLayer::new_for_http()
-        .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
-        .on_request(DefaultOnRequest::new().level(Level::INFO))
-        .on_response(DefaultOnResponse::new().level(Level::INFO));
-
-    Router::new()
-        .route("/", get(|| async { "Rowan Web API v1.0" }))
-        .nest("/api", create_router())
-        .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB
-        .layer(trace)
-        .layer(cors)
-        .with_state(state)
-}
-
-#[derive(Clone)]
-pub struct AppState {
-    pub db: DatabaseConnection,
-    pub config: AppConfig,
 }

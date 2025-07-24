@@ -1,4 +1,4 @@
-# 数据库迁移 (Migrations)
+# 数据库迁移 (Migration)
 
 ## 概述
 
@@ -8,9 +8,21 @@
 
 ## 数据库设计概览
 
-你的博客项目数据库设计简洁高效，主要包含以下核心表格，它们共同支撑了博客的各项功能：
-
 ### notes_metadata
+
+| 字段名       | 数据类型                     | 约束                                | 备注              |
+| ------------ | ---------------------------- | ----------------------------------- | ----------------- |
+| id           | integer                      | PRIMARY KEY, AUTOINCREMENT          | 唯一 ID           |
+| file_id      | uuid_text                    | NOT NULL, UNIQUE                    | 文件唯一标识符    |
+| slug         | varchar(255)                 | NOT NULL, UNIQUE                    | URL 友好名称      |
+| title        | varchar(255)                 | NOT NULL                            | 笔记/文章标题     |
+| summary      | text                         | NULL                                | 摘要              |
+| published_at | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 发布时间          |
+| updated_at   | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新时间          |
+| views        | integer                      | NOT NULL, DEFAULT 0                 | 浏览量            |
+| likes_count  | integer                      | NOT NULL, DEFAULT 0                 | 点赞数            |
+| tags         | text                         | NULL                                | 标签 (如逗号分隔) |
+| category     | text                         | NULL                                | 分类              |
 
 **用途**: 存储博客文章的结构化信息，如标题、摘要、发布时间、阅读量和点赞数。文章的实际内容存储在文件系统中，此表只存储其元数据。
 
@@ -21,6 +33,17 @@
 ---
 
 ### comments (评论表)
+
+| 字段名             | 数据类型                     | 约束                                                           | 备注                     |
+| ------------------ | ---------------------------- | -------------------------------------------------------------- | ------------------------ |
+| id                 | integer                      | PRIMARY KEY, AUTOINCREMENT                                     | 唯一 ID                  |
+| note_metadata_id   | integer                      | NULL, FOREIGN KEY (notes_metadata.id) ON DELETE CASCADE        | 关联笔记元数据 ID        |
+| essay_id           | integer                      | NULL, FOREIGN KEY (essays.id) ON DELETE CASCADE                | 关联文章 ID              |
+| visitor_profile_id | integer                      | NOT NULL, FOREIGN KEY (visitor_profiles.id) ON DELETE RESTRICT | 关联访客资料 ID          |
+| content            | text                         | NOT NULL                                                       | 评论内容                 |
+| parent_id          | integer                      | NULL, FOREIGN KEY (comments.id) ON DELETE SET NULL             | 父评论 ID (用于嵌套评论) |
+| created_at         | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP                            | 创建时间                 |
+| is_approved        | boolean                      | NOT NULL, DEFAULT FALSE                                        | 是否审核通过             |
 
 **用途**: 存储用户在文章下的留言内容。
 
@@ -34,6 +57,12 @@
 
 ### likes (点赞记录表)
 
+| 字段名           | 数据类型    | 约束                                                        | 备注              |
+| ---------------- | ----------- | ----------------------------------------------------------- | ----------------- |
+| id               | integer     | PRIMARY KEY, AUTOINCREMENT                                  | 唯一 ID           |
+| note_metadata_id | integer     | NOT NULL, FOREIGN KEY (notes_metadata.id) ON DELETE CASCADE | 关联笔记元数据 ID |
+| ip_address       | varchar(45) | NOT NULL                                                    | 点赞者 IP 地址    |
+
 **用途**: 记录每篇笔记的点赞行为，最主要用于限制重复点赞。
 
 **关键点**:
@@ -45,6 +74,17 @@
 ---
 
 ### friends_links (友链表)
+
+| 字段名      | 数据类型                     | 约束                                | 备注          |
+| ----------- | ---------------------------- | ----------------------------------- | ------------- |
+| id          | integer                      | PRIMARY KEY, AUTOINCREMENT          | 唯一 ID       |
+| name        | varchar(15)                  | NOT NULL                            | 链接名称      |
+| url         | varchar(255)                 | NOT NULL, UNIQUE                    | 链接 URL      |
+| description | varchar(100)                 | NULL                                | 链接描述      |
+| logo_url    | varchar(255)                 | NULL                                | Logo 图片 URL |
+| sort_order  | integer                      | NOT NULL                            | 排序顺序      |
+| created_at  | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 创建时间      |
+| updated_at  | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新时间      |
 
 **用途**: 存储你的博客友情链接信息。
 
@@ -59,12 +99,19 @@
 
 ---
 
-### visitor_profiles (访客偏好表)
+### essays
 
-**用途**: 存储匿名访客的长期偏好设置，主要是将浏览器的 Cookie ID 与访客的昵称进行绑定。
+| 字段名     | 数据类型                     | 约束                                | 备注     |
+| ---------- | ---------------------------- | ----------------------------------- | -------- |
+| id         | integer                      | PRIMARY KEY, AUTOINCREMENT          | 唯一 ID  |
+| title      | varchar(20)                  | NULL                                | 文章标题 |
+| content    | text                         | NOT NULL                            | 文章内容 |
+| created_at | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| updated_at | timestamp_with_timezone_text | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 更新时间 |
+
+**用途**: 存储博客文章的内容。
 
 **关键点**:
 
-- `cookie_id` 使用 UUID 格式，长度限制为 40 且唯一。
-- 存储访客选择的昵称 (`nickname`)，不要求唯一。
-- 包含 `ip_address` 字段作为辅助信息，但不再作为绑定昵称的主要依据。
+- 包含文章标题和内容。
+- 提供创建和更新时间戳。
