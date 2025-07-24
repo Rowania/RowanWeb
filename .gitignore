@@ -8,7 +8,7 @@
 .env.production.local
 
 # Rust
-/backend/target/
+target/
 /backend/Cargo.lock
 *.rs.bk
 
@@ -58,7 +58,6 @@ Thumbs.db
 # 构建产物
 /dist/
 /build/
-target/
 
 # 测试覆盖率
 coverage/
