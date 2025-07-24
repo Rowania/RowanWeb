@@ -1,11 +1,11 @@
 use axum::{
+    Router,
     extract::DefaultBodyLimit,
     http::{
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
         HeaderValue, Method,
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     },
     routing::get,
-    Router,
 };
 use sea_orm::{Database, DatabaseConnection};
 use std::time::Duration;
@@ -25,10 +25,7 @@ mod models;
 mod service;
 
 use crate::{
-    api::create_router,
-    config::AppConfig,
-    error::AppResult,
-    infra::db::create_connection,
+    api::create_router, config::AppConfig, error::AppResult, infra::db::create_connection,
 };
 
 #[tokio::main]
@@ -51,13 +48,17 @@ async fn main() -> AppResult<()> {
 
     // 创建数据库连接
     let db = create_connection(&config.database.url).await?;
-    
+
     // 运行数据库迁移
-    sea_orm_migration::Migrator::up(&db, None).await
+    sea_orm_migration::Migrator::up(&db, None)
+        .await
         .map_err(|e| crate::error::AppError::Database(e))?;
 
     // 创建应用状态
-    let app_state = AppState { db, config: config.clone() };
+    let app_state = AppState {
+        db,
+        config: config.clone(),
+    };
 
     // 创建路由
     let app = create_app(app_state);
@@ -65,7 +66,7 @@ async fn main() -> AppResult<()> {
     // 启动服务器
     let listener = tokio::net::TcpListener::bind(&config.server.address()).await?;
     tracing::info!("Listening on {}", config.server.address());
-    
+
     axum::serve(listener, app).await?;
 
     Ok(())

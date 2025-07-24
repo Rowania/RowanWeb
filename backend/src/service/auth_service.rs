@@ -1,8 +1,6 @@
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
-};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -24,10 +22,7 @@ pub struct Claims {
 }
 
 /// 用户注册
-pub async fn register(
-    db: &DatabaseConnection,
-    req: RegisterRequest,
-) -> AppResult<user::Model> {
+pub async fn register(db: &DatabaseConnection, req: RegisterRequest) -> AppResult<user::Model> {
     // 检查邮箱是否已存在
     let existing_user = User::find()
         .filter(user::Column::Email.eq(&req.email))
@@ -57,10 +52,7 @@ pub async fn register(
 }
 
 /// 用户登录
-pub async fn login(
-    db: &DatabaseConnection,
-    req: LoginRequest,
-) -> AppResult<user::Model> {
+pub async fn login(db: &DatabaseConnection, req: LoginRequest) -> AppResult<user::Model> {
     // 查找用户
     let user = User::find()
         .filter(user::Column::Email.eq(&req.email))
@@ -110,10 +102,7 @@ pub fn verify_token(token: &str, config: &JwtConfig) -> AppResult<Claims> {
 }
 
 /// 根据用户ID获取用户
-pub async fn get_user_by_id(
-    db: &DatabaseConnection,
-    user_id: Uuid,
-) -> AppResult<user::Model> {
+pub async fn get_user_by_id(db: &DatabaseConnection, user_id: Uuid) -> AppResult<user::Model> {
     let user = User::find_by_id(user_id)
         .one(db)
         .await?

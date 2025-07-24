@@ -36,7 +36,7 @@ impl AppConfig {
             .build()?;
 
         let mut config: AppConfig = settings.try_deserialize()?;
-        
+
         // JWT secret 必须从环境变量获取
         config.jwt.secret = env::var("JWT_SECRET")
             .unwrap_or_else(|_| "your-secret-key-change-in-production".to_string());

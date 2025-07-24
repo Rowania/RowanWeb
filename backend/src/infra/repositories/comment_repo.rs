@@ -1,5 +1,7 @@
 // 评论仓库层 - 数据访问接口
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder, PaginatorTrait};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+};
 use uuid::Uuid;
 
 use crate::{

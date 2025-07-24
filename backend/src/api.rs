@@ -3,8 +3,8 @@ pub mod comment_handler;
 pub mod note_handler;
 
 use axum::{
-    routing::{delete, get, post, put},
     Router,
+    routing::{delete, get, post, put},
 };
 
 use crate::AppState;
@@ -41,5 +41,8 @@ fn comment_routes() -> Router<AppState> {
         .route("/:id", get(comment_handler::get_comment))
         .route("/:id", put(comment_handler::update_comment))
         .route("/:id", delete(comment_handler::delete_comment))
-        .route("/note/:note_id", get(comment_handler::list_comments_by_note))
+        .route(
+            "/note/:note_id",
+            get(comment_handler::list_comments_by_note),
+        )
 }

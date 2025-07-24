@@ -1,7 +1,7 @@
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde_json::json;
 use thiserror::Error;
@@ -55,36 +55,29 @@ impl IntoResponse for AppError {
         let (status, error_message) = match self {
             AppError::Database(ref e) => {
                 tracing::error!("Database error: {:?}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Database error".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Database error".to_string(),
+                )
             }
             AppError::Validation(ref e) => {
                 (StatusCode::BAD_REQUEST, format!("Validation error: {}", e))
             }
             AppError::Jwt(_) => (StatusCode::UNAUTHORIZED, "Invalid token".to_string()),
-            AppError::Bcrypt(_) | AppError::Argon2(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Encryption error".to_string())
-            }
-            AppError::Config(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error".to_string())
-            }
-            AppError::Io(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "IO error".to_string())
-            }
-            AppError::Unauthorized => {
-                (StatusCode::UNAUTHORIZED, "Unauthorized".to_string())
-            }
-            AppError::Forbidden => {
-                (StatusCode::FORBIDDEN, "Forbidden".to_string())
-            }
-            AppError::NotFound => {
-                (StatusCode::NOT_FOUND, "Not found".to_string())
-            }
-            AppError::Conflict(msg) => {
-                (StatusCode::CONFLICT, msg)
-            }
-            AppError::BadRequest(msg) => {
-                (StatusCode::BAD_REQUEST, msg)
-            }
+            AppError::Bcrypt(_) | AppError::Argon2(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Encryption error".to_string(),
+            ),
+            AppError::Config(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Configuration error".to_string(),
+            ),
+            AppError::Io(_) => (StatusCode::INTERNAL_SERVER_ERROR, "IO error".to_string()),
+            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
+            AppError::Forbidden => (StatusCode::FORBIDDEN, "Forbidden".to_string()),
+            AppError::NotFound => (StatusCode::NOT_FOUND, "Not found".to_string()),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::Internal(msg) => {
                 tracing::error!("Internal error: {}", msg);
                 (StatusCode::INTERNAL_SERVER_ERROR, msg)

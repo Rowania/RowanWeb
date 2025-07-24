@@ -1,16 +1,16 @@
 use axum::{
+    Json,
     extract::{Path, State},
     http::StatusCode,
-    Json,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use validator::Validate;
 
 use crate::{
+    AppState,
     error::{AppError, AppResult},
     models::dtos::{LoginRequest, RegisterRequest, UserResponse},
     service::auth_service,
-    AppState,
 };
 
 /// 用户注册
@@ -19,10 +19,10 @@ pub async fn register(
     Json(payload): Json<RegisterRequest>,
 ) -> AppResult<Json<Value>> {
     payload.validate()?;
-    
+
     let user = auth_service::register(&state.db, payload).await?;
     let token = auth_service::generate_token(&user, &state.config.jwt)?;
-    
+
     Ok(Json(json!({
         "user": UserResponse::from(user),
         "token": token,
@@ -36,10 +36,10 @@ pub async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<Json<Value>> {
     payload.validate()?;
-    
+
     let user = auth_service::login(&state.db, payload).await?;
     let token = auth_service::generate_token(&user, &state.config.jwt)?;
-    
+
     Ok(Json(json!({
         "user": UserResponse::from(user),
         "token": token,
@@ -61,7 +61,7 @@ pub async fn refresh_token(
     user: crate::models::user::Model,
 ) -> AppResult<Json<Value>> {
     let token = auth_service::generate_token(&user, &state.config.jwt)?;
-    
+
     Ok(Json(json!({
         "token": token,
         "message": "Token refreshed successfully"

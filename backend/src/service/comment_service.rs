@@ -35,10 +35,7 @@ pub async fn create_comment(
 }
 
 /// 获取单个评论
-pub async fn get_comment(
-    db: &DatabaseConnection,
-    comment_id: Uuid,
-) -> AppResult<comment::Model> {
+pub async fn get_comment(db: &DatabaseConnection, comment_id: Uuid) -> AppResult<comment::Model> {
     let comment = Comment::find_by_id(comment_id)
         .one(db)
         .await?

@@ -1,19 +1,19 @@
 use axum::{
-    extract::{Path, Query, State},
     Json,
+    extract::{Path, Query, State},
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
+    AppState,
     error::AppResult,
     models::{
         dtos::{CommentResponse, CreateCommentRequest, PaginationQuery, UpdateCommentRequest},
         user,
     },
     service::comment_service,
-    AppState,
 };
 
 /// 创建评论
@@ -23,7 +23,7 @@ pub async fn create_comment(
     Json(payload): Json<CreateCommentRequest>,
 ) -> AppResult<Json<CommentResponse>> {
     payload.validate()?;
-    
+
     let comment = comment_service::create_comment(&state.db, payload, user.id).await?;
     Ok(Json(CommentResponse::from(comment)))
 }
@@ -45,7 +45,7 @@ pub async fn update_comment(
     Json(payload): Json<UpdateCommentRequest>,
 ) -> AppResult<Json<CommentResponse>> {
     payload.validate()?;
-    
+
     let comment = comment_service::update_comment(&state.db, id, payload, user.id).await?;
     Ok(Json(CommentResponse::from(comment)))
 }
@@ -66,13 +66,12 @@ pub async fn list_comments_by_note(
     Path(note_id): Path<Uuid>,
     Query(query): Query<PaginationQuery>,
 ) -> AppResult<Json<Value>> {
-    let (comments, total) = comment_service::list_comments_by_note(&state.db, note_id, &query).await?;
-    
-    let comment_responses: Vec<CommentResponse> = comments
-        .into_iter()
-        .map(CommentResponse::from)
-        .collect();
-    
+    let (comments, total) =
+        comment_service::list_comments_by_note(&state.db, note_id, &query).await?;
+
+    let comment_responses: Vec<CommentResponse> =
+        comments.into_iter().map(CommentResponse::from).collect();
+
     Ok(Json(json!({
         "comments": comment_responses,
         "total": total,

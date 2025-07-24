@@ -1,22 +1,21 @@
 // 笔记仓库层 - 数据访问接口
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder, PaginatorTrait};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+};
 use uuid::Uuid;
 
 use crate::{
     error::AppResult,
     models::{
-        note::{self, Entity as Note},
         dtos::PaginationQuery,
+        note::{self, Entity as Note},
     },
 };
 
 pub struct NoteRepository;
 
 impl NoteRepository {
-    pub async fn find_by_id(
-        db: &DatabaseConnection,
-        id: Uuid,
-    ) -> AppResult<Option<note::Model>> {
+    pub async fn find_by_id(db: &DatabaseConnection, id: Uuid) -> AppResult<Option<note::Model>> {
         let note = Note::find_by_id(id).one(db).await?;
         Ok(note)
     }

@@ -1,5 +1,5 @@
 // 用户仓库层 - 数据访问接口
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::{
@@ -10,10 +10,7 @@ use crate::{
 pub struct UserRepository;
 
 impl UserRepository {
-    pub async fn find_by_id(
-        db: &DatabaseConnection,
-        id: Uuid,
-    ) -> AppResult<Option<user::Model>> {
+    pub async fn find_by_id(db: &DatabaseConnection, id: Uuid) -> AppResult<Option<user::Model>> {
         let user = User::find_by_id(id).one(db).await?;
         Ok(user)
     }

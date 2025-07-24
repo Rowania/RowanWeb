@@ -1,19 +1,19 @@
 use axum::{
-    extract::{Path, Query, State},
     Json,
+    extract::{Path, Query, State},
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
+    AppState,
     error::AppResult,
     models::{
         dtos::{CreateNoteRequest, NoteResponse, PaginationQuery, UpdateNoteRequest},
         user,
     },
     service::note_service,
-    AppState,
 };
 
 /// 获取笔记列表
@@ -22,12 +22,9 @@ pub async fn list_notes(
     Query(query): Query<PaginationQuery>,
 ) -> AppResult<Json<Value>> {
     let (notes, total) = note_service::list_notes(&state.db, &query).await?;
-    
-    let note_responses: Vec<NoteResponse> = notes
-        .into_iter()
-        .map(NoteResponse::from)
-        .collect();
-    
+
+    let note_responses: Vec<NoteResponse> = notes.into_iter().map(NoteResponse::from).collect();
+
     Ok(Json(json!({
         "notes": note_responses,
         "total": total,
@@ -43,7 +40,7 @@ pub async fn create_note(
     Json(payload): Json<CreateNoteRequest>,
 ) -> AppResult<Json<NoteResponse>> {
     payload.validate()?;
-    
+
     let note = note_service::create_note(&state.db, payload, user.id).await?;
     Ok(Json(NoteResponse::from(note)))
 }
@@ -65,7 +62,7 @@ pub async fn update_note(
     Json(payload): Json<UpdateNoteRequest>,
 ) -> AppResult<Json<NoteResponse>> {
     payload.validate()?;
-    
+
     let note = note_service::update_note(&state.db, id, payload, user.id).await?;
     Ok(Json(NoteResponse::from(note)))
 }

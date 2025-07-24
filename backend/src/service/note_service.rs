@@ -55,10 +55,7 @@ pub async fn create_note(
 }
 
 /// 获取单个笔记
-pub async fn get_note(
-    db: &DatabaseConnection,
-    note_id: Uuid,
-) -> AppResult<note::Model> {
+pub async fn get_note(db: &DatabaseConnection, note_id: Uuid) -> AppResult<note::Model> {
     let note = Note::find_by_id(note_id)
         .one(db)
         .await?
@@ -108,11 +105,7 @@ pub async fn update_note(
 }
 
 /// 删除笔记
-pub async fn delete_note(
-    db: &DatabaseConnection,
-    note_id: Uuid,
-    author_id: Uuid,
-) -> AppResult<()> {
+pub async fn delete_note(db: &DatabaseConnection, note_id: Uuid, author_id: Uuid) -> AppResult<()> {
     let note = Note::find_by_id(note_id)
         .one(db)
         .await?
@@ -128,11 +121,7 @@ pub async fn delete_note(
 }
 
 /// 点赞笔记
-pub async fn like_note(
-    db: &DatabaseConnection,
-    note_id: Uuid,
-    _user_id: Uuid,
-) -> AppResult<()> {
+pub async fn like_note(db: &DatabaseConnection, note_id: Uuid, _user_id: Uuid) -> AppResult<()> {
     let note = Note::find_by_id(note_id)
         .one(db)
         .await?
@@ -147,11 +136,7 @@ pub async fn like_note(
 }
 
 /// 取消点赞
-pub async fn unlike_note(
-    db: &DatabaseConnection,
-    note_id: Uuid,
-    _user_id: Uuid,
-) -> AppResult<()> {
+pub async fn unlike_note(db: &DatabaseConnection, note_id: Uuid, _user_id: Uuid) -> AppResult<()> {
     let note = Note::find_by_id(note_id)
         .one(db)
         .await?

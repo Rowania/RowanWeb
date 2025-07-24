@@ -28,11 +28,7 @@ pub enum Relation {
         to = "super::user::Column::Id"
     )]
     Author,
-    #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ParentId",
-        to = "Column::Id"
-    )]
+    #[sea_orm(belongs_to = "Entity", from = "Column::ParentId", to = "Column::Id")]
     Parent,
     #[sea_orm(has_many = "Entity")]
     Replies,
